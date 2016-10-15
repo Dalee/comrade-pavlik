@@ -6,27 +6,34 @@
 ![logo](doc/pavlik.png)
 
 Meet [Comrade Pavlik](https://en.wikipedia.org/wiki/Pavlik_Morozov).
-Zero<sup><a href="#zeroconf">[1]</a></sup> configuration private composer/npm repo source for your GitLab instance.
+Zero-configuration<sup><a href="#zeroconf">[1]</a></sup> private composer
+or/and npm server using GitLab instance as backend.
 
-Supported:
+Working out-of-the-box:
  * npm >= 2.5
- * composer (any, i think..)
+ * composer (should work any recent version)
+ * GitLab >= 8.x
+
+## Docker image
+
+```bash
+docker pull dalee/comrade-pavlik
+```
 
 ## Project goals
 
- * Unify private package sources (private GitLab instance)
+ * GitLab instance as registry backend
  * Easy-to-use as Developer
  * Easy-to-use as CI-server
- * Use docker build process without GitLab passwords or deploy keys
- * Build complex deploy configurations based on infrastructure
-
-Due of way npm works, it's not recommended to use this service for *big* repositories (lot of versions and heavy-sized repos)
+ * Use docker build process without leaving GitLab passwords or deploy keys in layers
+ * Access management via GitLab private tokens
+ * Quick and easy install
 
 ## What included?
 
- * Per-user authorization (via GitLab private Token)
  * Composer private packages
- * NPM private packages
+ * NPM private scoped packages
+ * Per-user authorization (via GitLab private tokens)
 
 ## Prerequisites
 
