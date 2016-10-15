@@ -1,0 +1,4 @@
+#!/bin/sh
+
+exec /sbin/setuser nobody \
+    /usr/bin/node {{ project_root }}/dist/index.js

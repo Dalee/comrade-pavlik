@@ -1,0 +1,10 @@
+# {{ ansible_managed }}
+
+export PATH="{{ project_root }}/vendor/bin:{{ project_root }}/node_modules/.bin:$PATH"
+export PS1="\u@\h [\w] > "
+
+if [ -f ~/.environment.rc ]; then
+	. ~/.environment.rc
+fi
+
+cd "{{ project_root }}"

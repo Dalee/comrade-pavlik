@@ -1,0 +1,4 @@
+- name: project - create log dir
+  file:
+    path: "{{ project_root }}/log"
+    state: "directory"

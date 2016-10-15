@@ -1,0 +1,8 @@
+.git
+.idea
+coverage
+log
+node_modules
+Vagrantfile
+README.md
+doc

@@ -1,0 +1,8 @@
+- hosts: localhost
+  connection: local
+  roles:
+    - Dalee.bootstrap
+    - Dalee.install-locales
+    - Dalee.install-docker
+    - Dalee.install-nodejs
+    - configure.vagrant

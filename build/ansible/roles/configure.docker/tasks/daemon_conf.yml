@@ -1,0 +1,32 @@
+#
+- name: daemon - ensure service nginx directory exists
+  file:
+    path: "/etc/service/nginx"
+    state: "directory"
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: daemon - install nginx service
+  template:
+    src: "nginx.run.j2"
+    dest: "/etc/service/nginx/run"
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: daemon - ensure service pavlik directory exists
+  file:
+    path: "/etc/service/pavlik"
+    state: "directory"
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: daemon - install pavlik service
+  template:
+    src: "project.run.j2"
+    dest: "/etc/service/pavlik/run"
+    owner: "root"
+    group: "root"
+    mode: 0755

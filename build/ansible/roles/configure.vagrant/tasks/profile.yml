@@ -1,0 +1,7 @@
+- name: profile - setup env
+  template:
+    src: "bash_profile.j2"
+    dest: "/home/vagrant/.bash_profile"
+    mode: 0644
+    owner: vagrant
+    group: vagrant

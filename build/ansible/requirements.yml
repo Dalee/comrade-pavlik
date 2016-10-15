@@ -1,0 +1,4 @@
+- src: Dalee.bootstrap
+- src: Dalee.install-locales
+- src: Dalee.install-nodejs
+- src: Dalee.install-docker

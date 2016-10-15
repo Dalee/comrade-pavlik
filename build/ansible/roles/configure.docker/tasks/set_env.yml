@@ -1,0 +1,9 @@
+#
+- name: set node_port
+  template:
+    src: "env/NODE_PORT.j2"
+    dest: "/etc/container_environment/NODE_PORT"
+    owner: "root"
+    group: "root"
+    mode: 0644
+

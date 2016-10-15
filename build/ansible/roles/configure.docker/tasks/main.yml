@@ -1,0 +1,3 @@
+- include: software.yml
+- include: nginx_conf.yml
+- include: daemon_conf.yml

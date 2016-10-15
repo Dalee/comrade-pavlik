@@ -1,0 +1,11 @@
+# build parameters
+# setup by vagrant and jenkins
+
+export HOST_COVERAGE_DIR="${WORKSPACE}/coverage"
+export CONTAINER_COVERAGE_DIR="/app/coverage"
+
+export IMAGE_NAME="${JOB_BASE_NAME}"
+export IMAGE_NUMBER="${BUILD_NUMBER}"
+export IMAGE="${IMAGE_NAME}:${IMAGE_NUMBER}"
+
+export CONTAINER_NAME="${JOB_BASE_NAME}${BUILD_NUMBER}"

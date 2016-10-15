@@ -1,0 +1,23 @@
+upstream app {
+    server 127.0.0.1:3000;
+}
+
+server {
+    listen 80 default_server;
+    root {{ project_root }}/public;
+
+    proxy_pass_request_headers on;
+
+    location = /favicon.ico {
+        try_files $uri @backend;
+    }
+
+    location / {
+        try_files /__not_exists__ @backend;
+    }
+
+    location @backend {
+        proxy_set_header Host $host;
+        proxy_pass http://app;
+    }
+}

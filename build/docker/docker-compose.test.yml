@@ -1,0 +1,9 @@
+version: '2'
+
+services:
+  pavlik:
+    image: ${IMAGE}
+    environment:
+      COVERAGE_DIR: ${CONTAINER_COVERAGE_DIR}
+    container_name: ${CONTAINER_NAME}
+    command: make coverage
