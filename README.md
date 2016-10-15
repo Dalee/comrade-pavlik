@@ -75,6 +75,8 @@ Currently supported configuration options:
  * `GITLAB_FILE_NAMESPACE` - your company key - `acme`
  * `NPM_CACHE_DIR` - place to store downloaded packages for npm (optional, Pavlik will use `/tmp` by default)
 
+To simplify deployment, you can use prebuild docker [image](https://hub.docker.com/r/dalee/comrade-pavlik/) `dalee/comrade-pavlik`.
+
 
 ## Using
 
