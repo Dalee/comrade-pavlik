@@ -1,5 +1,7 @@
 # GitLab npm/composer private repos?
 
+[![](https://images.microbadger.com/badges/image/dalee/comrade-pavlik.svg)](https://microbadger.com/images/dalee/comrade-pavlik "Get your own image badge on microbadger.com")
+
 ![logo](doc/pavlik.png)
 
 Meet [Comrade Pavlik](https://en.wikipedia.org/wiki/Pavlik_Morozov).
