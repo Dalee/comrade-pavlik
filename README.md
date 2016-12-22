@@ -180,7 +180,7 @@ ExecStart=/usr/bin/docker run --rm --name %n \
         -e "GITLAB_REPO_FILE=repoList.json" \
         -e "GITLAB_FILE_NAMESPACE=acme" \
         -p 8081:80 \
-        pavlik:latest
+        dalee/comrade-pavlik:latest
 
 [Install]
 WantedBy=multi-user.target
@@ -195,8 +195,13 @@ Development process
 
 <a id="zeroconf" name="zeroconf">[1] - almost zero, actually</a><br/>
 
-### See also
+## Licensing
 
-Those things maybe useful also:
+Comrade Pavlik is licensed under the Apache License, Version 2.0. 
+See LICENSE for the full license text.
+
+## Other maybe-useful projects
+
  * [Sinopia](https://github.com/rlidwka/sinopia)
  * [Docker-npmjs](https://github.com/terinjokes/docker-npmjs)
+
