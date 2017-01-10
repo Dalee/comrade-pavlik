@@ -78,11 +78,10 @@ export default class GitlabProvider {
      * @returns {Request}
      */
     async getArchive(uuid, ref, fmt) {
-        debug('app:provider:gitlab')('fetching and streaming archive', uuid, ref);
-
         let repo = null;
-        const repoList = await this._getRepoList();
 
+        debug('app:provider:gitlab')('fetching and streaming archive', uuid, ref);
+        const repoList = await this._getRepoList();
         for (let repoObj of repoList) {
             if (repoObj.getUuid() === uuid) {
                 repo = repoObj;
@@ -94,21 +93,22 @@ export default class GitlabProvider {
             return null;
         }
 
-        const projectInfo = await this._getProjectInfo(repo.getNamespace());
-        if (projectInfo === null) {
+        try {
+            const projectInfo = await this._getProjectInfo(repo.getNamespace());
+            const endpointUrl = `${this._url}/api/v3/projects/${projectInfo.id}/repository/archive.${fmt}?sha=${ref}`;
+
+            debug('app:provider:gitlab')('streaming project archive', endpointUrl);
+            return request({
+                url: endpointUrl,
+                headers: {
+                    'PRIVATE-TOKEN': this._token
+                }
+            });
+
+        } catch (e) {
+            debug('app:provider:gitlab')('streaming project archive error:', e);
             return null;
         }
-
-        // format API endpoint URL
-        const endpointUrl = `${this._url}/api/v3/projects/${projectInfo.id}/repository/archive.${fmt}?sha=${ref}`;
-
-        debug('app:provider:gitlab')('streaming project archive', endpointUrl);
-        return request({
-            url: endpointUrl,
-            headers: {
-                'PRIVATE-TOKEN': this._token
-            }
-        });
     }
 
     /**
@@ -117,19 +117,15 @@ export default class GitlabProvider {
      * @private
      */
     async _getRepoList() {
-        // fetch project info
-        const projectInfo = await this._getProjectInfo(this._repoName);
-        if (projectInfo === null) {
+        try {
+            const projectInfo = await this._getProjectInfo(this._repoName);
+            const rawRepoList = await this._getProjectJsonFile(projectInfo, this._repoFile, 'master');
+            return await this._parseRepoList(rawRepoList);
+
+        } catch (e) {
+            debug('app:provider:gitlab')('error', e);
             return [];
         }
-
-        // fetch raw repo file
-        const rawRepoList = await this._getProjectJsonFile(projectInfo, this._repoFile, 'master');
-        if (rawRepoList === null) {
-            return [];
-        }
-
-        return await this._parseRepoList(rawRepoList);
     }
 
     /**
@@ -250,14 +246,19 @@ export default class GitlabProvider {
     async _fillRefs(repoObject) {
         debug('app:provider:gitlab')('filling refs for project', repoObject.getNamespace());
 
-        const projectInfo = await this._getProjectInfo(repoObject.getNamespace());
-        repoObject.setProjectMetadata(projectInfo);
+        try {
+            const projectInfo = await this._getProjectInfo(repoObject.getNamespace());
+            repoObject.setProjectMetadata(projectInfo);
 
-        await this._loadTags(projectInfo, repoObject);
-        await this._loadBranches(projectInfo, repoObject);
-        await this._loadRefsMeta(projectInfo, repoObject);
+            await this._loadTags(projectInfo, repoObject);
+            await this._loadBranches(projectInfo, repoObject);
+            await this._loadRefsMeta(projectInfo, repoObject);
+            return repoObject;
 
-        return repoObject;
+        } catch (e) {
+            debug('app:provider:gitlab')('filling refs for project error:', e);
+            return null;
+        }
     }
 
     /**

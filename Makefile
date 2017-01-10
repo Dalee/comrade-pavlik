@@ -10,8 +10,8 @@ vagrant:
 	$(npm-install) --silent
 
 test:
-	$(NODE) ./node_modules/.bin/mocha
 	$(NODE) ./node_modules/.bin/eslint src/
+	$(NODE) ./node_modules/.bin/mocha
 
 coverage:
 	$(NODE) ./node_modules/.bin/babel-node \
