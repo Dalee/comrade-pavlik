@@ -5,3 +5,4 @@ log
 dist
 coverage
 .env
+build/ansible/vagrant.retry
