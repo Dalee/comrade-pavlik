@@ -30,7 +30,7 @@ export default function getTokenFromRequest(request) {
     }
 
     let token = null;
-    switch(kind[1].toLowerCase()) {
+    switch (kind[1].toLowerCase()) {
         case 'basic':
             token = extractBasic(kind[2]);
             break;

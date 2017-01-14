@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import {Readable} from 'stream';
 import semver from 'semver';
 import debug from 'debug';
 import GitlabProvider from './../provider/gitlab';
@@ -194,7 +193,7 @@ export default class NpmRegistry {
             });
 
             output.on('error', (err) => {
-                reject(err)
+                reject(err);
             });
 
             output.on('close', () => {
