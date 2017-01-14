@@ -15,7 +15,6 @@
  */
 
 const Pack = require('../package.json');
-const env = require('dotenv').config({silent: true});
 
 /**
  * Manifest
