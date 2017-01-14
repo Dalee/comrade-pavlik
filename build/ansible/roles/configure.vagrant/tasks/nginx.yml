@@ -1,5 +1,3 @@
-# nginx
-
 - name: nginx - main configuration file
   template:
     src: "nginx/project.conf.j2"

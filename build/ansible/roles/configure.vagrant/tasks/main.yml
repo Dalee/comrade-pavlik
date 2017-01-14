@@ -1,8 +1,2 @@
-- name: profile
-  include: profile.yml
-
-- name: nginx
-  include: nginx.yml
-
-- name: project
-  include: project.yml
+- include: profile.yml
+- include: nginx.yml
