@@ -16,20 +16,15 @@
 
 import debug from 'debug';
 import Joi from 'joi';
+import _ from 'lodash';
 import ComposerRegistry from '../registry/composer';
 import NpmRegistry from '../registry/npm';
-import Cache from '../model/cache';
 import FsCache from '../model/fs_cache';
 import getTokenFromRequest from '../model/credentials';
-import appInfo from '../../package.json';
+import Pack from '../../package.json';
 
-/**
- *
- * @type {Cache}
- */
-const memoryCache = new Cache();
 const fsCache = new FsCache(process.env.NPM_CACHE_DIR || '/tmp');
-const upstreamRegistry = 'https://registry.npmjs.org';
+const upstreamNpmRegistry = 'https://registry.npmjs.org';
 
 /**
  * get current public host
@@ -51,7 +46,7 @@ export default [
     {
         method: 'GET',
         path: "/",
-        handler: versionIndex,
+        handler: healthCheck,
         config: {
             description: 'version info',
             tags: ["api"]
@@ -141,20 +136,18 @@ export default [
  * @param request
  * @param reply
  */
-async function composerIndex(request, reply) {
-    memoryCache.clearIfExpired();
-
+function composerIndex(request, reply) {
     const token = getTokenFromRequest(request);
     const publicHost = getPublicHost(request);
     const registry = new ComposerRegistry(
         token,
-        request.server.settings.app.gitlab,
-        memoryCache
+        request.server.settings.app.gitlab
     );
 
     debug('app:npm:composerIndex')('fetching package list');
-    const packageList = await registry.getPackageList(publicHost);
-    reply({"packages": packageList});
+    reply({
+        'packages': registry.getPackageList(publicHost)
+    });
 }
 
 /**
@@ -163,20 +156,18 @@ async function composerIndex(request, reply) {
  * @param request
  * @param reply
  */
-async function downloadComposerPackage(request, reply) {
+function downloadComposerPackage(request, reply) {
     const uuid = request.params.uuid;
     const ref = request.params.ref;
     const token = getTokenFromRequest(request);
 
     const registry = new ComposerRegistry(
         token,
-        request.server.settings.app.gitlab,
-        memoryCache
+        request.server.settings.app.gitlab
     );
 
     debug('app:npm:downloadComposerPackage')('fetching archive');
-    const response = await registry.getPackage(uuid, ref);
-    reply(response);
+    reply(registry.getPackage(uuid, ref));
 }
 
 
@@ -186,17 +177,14 @@ async function downloadComposerPackage(request, reply) {
  * @param request
  * @param reply
  */
-async function npmPackageMetadata(request, reply) {
-    memoryCache.clearIfExpired();
-
+function npmPackageMetadata(request, reply) {
     // ensure package name is scoped, otherwise, upstreamRedirect to official
     // npmjs registry.
     const fullName = request.params.name;
-    const upstreamRedirect = `${upstreamRegistry}/${fullName}`;
+    const upstreamRedirect = `${upstreamNpmRegistry}/${fullName}`;
     if (fullName.indexOf('@') === -1) {
         debug('app:npm:upstreamRedirect')('redirecting to:', upstreamRedirect);
-        reply.redirect(upstreamRedirect);
-        return;
+        return reply.redirect(upstreamRedirect);
     }
 
     const token = getTokenFromRequest(request);
@@ -205,18 +193,16 @@ async function npmPackageMetadata(request, reply) {
     const registry = new NpmRegistry(
         token,
         request.server.settings.app.gitlab,
-        memoryCache,
         fsCache
     );
 
     debug('app:npm:npmPackageMetadata')('searching package', packageName);
-    const response = await registry.getPackageJson(publicHost, packageName);
+    const response = registry.getPackageJson(publicHost, packageName);
 
     // not found, redirecting to upstream
     if (response === null) {
         debug('app:npm:upstreamRedirect')('redirecting to:', upstreamRedirect);
-        reply.redirect(upstreamRedirect);
-        return;
+        return reply.redirect(upstreamRedirect);
     }
 
     reply(response);
@@ -228,7 +214,7 @@ async function npmPackageMetadata(request, reply) {
  * @param request
  * @param reply
  */
-async function downloadNpmPackage(request, reply) {
+function downloadNpmPackage(request, reply) {
     const uuid = request.params.uuid;
     const ref = request.params.ref;
     const token = getTokenFromRequest(request);
@@ -236,13 +222,11 @@ async function downloadNpmPackage(request, reply) {
     const registry = new NpmRegistry(
         token,
         request.server.settings.app.gitlab,
-        memoryCache,
         fsCache
     );
 
     debug('app:npm:downloadNpmPackage')('fetching package');
-    const response = await registry.getPackage(uuid, ref);
-    reply(response);
+    reply(registry.getPackage(uuid, ref));
 }
 
 /**
@@ -252,7 +236,7 @@ async function downloadNpmPackage(request, reply) {
  * @param reply
  */
 function operationNpm(request, reply) {
-    const redirect = `${upstreamRegistry}/-/${request.params.any}`;
+    const redirect = `${upstreamNpmRegistry}/-/${request.params.any}`;
 
     debug('app:npm:redirect')('redirecting to:', redirect);
     reply.redirect(redirect);
@@ -264,9 +248,6 @@ function operationNpm(request, reply) {
  * @param request
  * @param reply
  */
-function versionIndex(request, reply) {
-    reply({
-        name: "Comrade Pavlik",
-        version: appInfo.version
-    });
+function healthCheck(request, reply) {
+    reply(_.pick(Pack, ['name', 'version']));
 }

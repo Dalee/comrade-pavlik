@@ -31,19 +31,16 @@ export default class NpmRegistry {
      *
      * @param {string} userToken
      * @param {Object} providerDef
-     * @param {Cache} providerCache
      * @param {FsCache} fsCache
      */
-    constructor(userToken, providerDef, providerCache, fsCache) {
+    constructor(userToken, providerDef, fsCache) {
+        this._fsCache = fsCache;
         this._provider = new GitlabProvider(
             'npm',
             'package.json',
             userToken,
-            providerDef,
-            providerCache
+            providerDef
         );
-
-        this._fsCache = fsCache;
     }
 
 
@@ -70,7 +67,7 @@ export default class NpmRegistry {
             return null;
         }
 
-        return await this._formatPackageJson(publicHost, targetRepo);
+        return this._formatPackageJson(publicHost, targetRepo);
     }
 
     /**
@@ -105,7 +102,7 @@ export default class NpmRegistry {
             "versions": {}
         };
 
-        for (let refInfo of refs) {
+        for (const refInfo of refs) {
             const refName = refInfo.name;
 
             if (!repo.isRefValid(refName) || !repo.isRefHasMetadata(refName)) {
@@ -211,7 +208,7 @@ export default class NpmRegistry {
      * @returns {Promise}
      * @private
      */
-    async _calculatePackageSignature(fileName) {
+    _calculatePackageSignature(fileName) {
         const hash = crypto.createHash('sha1');
         const stream = this._fsCache.getReadStream(fileName);
 

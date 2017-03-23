@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import Promise from 'bluebird';
 import debug from 'debug';
 import request from 'request';
 import gitlab from 'gitlab';
@@ -32,9 +33,8 @@ export default class GitlabProvider {
      * @param {string} jsonFile
      * @param {string} token
      * @param {Object} providerDef
-     * @param {Cache} cache
      */
-    constructor(tag, jsonFile, token, providerDef, cache) {
+    constructor(tag, jsonFile, token, providerDef) {
         this._gitlabAdapter = gitlab({
             'url': providerDef.url,
             'token': token
@@ -50,7 +50,6 @@ export default class GitlabProvider {
         this._searchTag = tag;
 
         this._jsonFile = jsonFile;
-        this._cache = cache;
     }
 
     /**
@@ -60,10 +59,11 @@ export default class GitlabProvider {
      */
     async getRepoList() {
         debug('app:provider:gitlab')('formatting repository list');
+
         const repoList = await this._getRepoList();
-        for (let repoObj of repoList) {
-            await this._fillRefs(repoObj);
-        }
+        await Promise.map(repoList, repoObj => {
+            return this._fillRefs(repoObj);
+        });
 
         return repoList;
     }
@@ -75,21 +75,21 @@ export default class GitlabProvider {
      * @param {string} uuid
      * @param {string} ref
      * @param {string} fmt
-     * @returns {Request}
+     * @returns {Request|null}
      */
     async getArchive(uuid, ref, fmt) {
-        let repo = null;
+        let repo;
 
         debug('app:provider:gitlab')('fetching and streaming archive', uuid, ref);
         const repoList = await this._getRepoList();
-        for (let repoObj of repoList) {
+        for (const repoObj of repoList) {
             if (repoObj.getUuid() === uuid) {
                 repo = repoObj;
                 break;
             }
         }
 
-        if (repo === null) {
+        if (!repo) {
             return null;
         }
 
@@ -113,14 +113,14 @@ export default class GitlabProvider {
 
     /**
      *
-     * @returns [Repo]
+     * @returns {Array}
      * @private
      */
     async _getRepoList() {
         try {
             const projectInfo = await this._getProjectInfo(this._repoName);
             const rawRepoList = await this._getProjectJsonFile(projectInfo, this._repoFile, 'master');
-            return await this._parseRepoList(rawRepoList);
+            return this._parseRepoList(rawRepoList);
 
         } catch (e) {
             debug('app:provider:gitlab')('error', e);
@@ -129,36 +129,13 @@ export default class GitlabProvider {
     }
 
     /**
-     * Provide at least one or two arguments to this function
-     * such as "resource type" and "resource id". And any
-     * number of optional arguments.
-     *
-     * _formatCacheKey(resource, id, ...)
-     *
-     * @returns {string}
-     * @private
-     */
-    _formatCacheKey() {
-        const cacheKeyList = [this._url];
-
-        for (let i = 0; i < arguments.length; i++) {
-            cacheKeyList.push(arguments[i]);
-        }
-
-        return cacheKeyList.join('_');
-    }
-
-    /**
-     * Fetch project info repoNamespace should be like "namespace/project"
-     * WARNING: cache should not be used here.
      *
      * @param {string} repoNamespace
      * @returns {Object}
      * @private
      */
-    async _getProjectInfo(repoNamespace) {
-        debug('app:provider')('fetching project info', repoNamespace);
-        return await new Promise((resolve, reject) => {
+    _getProjectInfo(repoNamespace) {
+        return new Promise((resolve, reject) => {
             this._gitlabAdapter.projects.show(repoNamespace, (project) => {
                 resolve(project);
             });
@@ -171,40 +148,29 @@ export default class GitlabProvider {
      * @param {Object} projectInfo
      * @param {string} fileName
      * @param {string} ref
+     * @returns {Array}
      * @private
      */
     async _getProjectJsonFile(projectInfo, fileName, ref) {
-        debug('app:provider')('loading json file', projectInfo.id, fileName, ref);
+        let rawRepoList;
 
-        // format unique cache id
-        const cacheKey = this._formatCacheKey(
-            projectInfo.path_with_namespace,
-            projectInfo.last_activity_at,
-            fileName,
-            ref
-        );
-
-        let rawRepoList = this._cache.get(cacheKey, null);
-        if (!rawRepoList) {
-            debug('app:provider')('cache miss, fetching json file', projectInfo.id, fileName, ref);
-            const rawFile = await new Promise((resolve, reject) => {
-                this._gitlabAdapter.projects.repository.showFile(projectInfo.id, {
-                    ref: ref,
-                    file_path: fileName
-                }, (file) => {
-                    resolve(file || {});
-                });
+        const rawFile = await new Promise((resolve, reject) => {
+            this._gitlabAdapter.projects.repository.showFile(projectInfo.id, {
+                ref: ref,
+                file_path: fileName
+            }, (file) => {
+                resolve(file || {});
             });
+        });
 
-            try {
-                rawRepoList = new Buffer(rawFile.content || '', 'base64').toString();
-                rawRepoList = JSON.parse(rawRepoList);
-                this._cache.set(cacheKey, rawRepoList);
+        try {
+            rawRepoList = new Buffer(rawFile.content || '', 'base64').toString();
+            rawRepoList = JSON.parse(rawRepoList);
 
-            } catch (e) {
-                rawRepoList = null;
-            }
+        } catch (e) {
+            rawRepoList = null;
         }
+
 
         return rawRepoList;
     }
@@ -212,14 +178,14 @@ export default class GitlabProvider {
     /**
      *
      * @param {Array} rawRepoList
-     * @returns [Repo]
+     * @returns {Array}
      * @private
      */
-    async _parseRepoList(rawRepoList) {
+    _parseRepoList(rawRepoList) {
         const result = [];
 
         debug('app:provider:gitlab')('parsing raw repository list');
-        for (let repoDef of rawRepoList) {
+        for (const repoDef of rawRepoList) {
             const repoObject = new Repo(repoDef, this._namespace);
 
             // does repo object fulfill all requirements?
@@ -250,9 +216,12 @@ export default class GitlabProvider {
             const projectInfo = await this._getProjectInfo(repoObject.getNamespace());
             repoObject.setProjectMetadata(projectInfo);
 
-            await this._loadTags(projectInfo, repoObject);
-            await this._loadBranches(projectInfo, repoObject);
-            await this._loadRefsMeta(projectInfo, repoObject);
+            await Promise.all([
+                this._loadTags(repoObject),
+                this._loadBranches(repoObject),
+                this._loadRefsMeta(projectInfo, repoObject)
+            ]);
+
             return repoObject;
 
         } catch (e) {
@@ -263,58 +232,30 @@ export default class GitlabProvider {
 
     /**
      *
-     * @param {Object} projectInfo
      * @param {Repo} repoObject
      * @private
      */
-    async _loadTags(projectInfo, repoObject) {
-        debug('app:provider:gitlab')('loading tags..', repoObject.getNamespace());
-        const tagsCacheKey = this._formatCacheKey(
-            'tags',
-            projectInfo.path_with_namespace,
-            projectInfo.last_activity_at
-        );
-
-        let tags = this._cache.get(tagsCacheKey, null);
-        if (!tags) {
-            debug('app:provider:gitlab')('cache miss, fetching tags', repoObject.getNamespace());
-            tags = await new Promise((resolve, reject) => {
-                this._gitlabAdapter.projects.repository.listTags(repoObject.getId(), (tags) => {
-                    this._cache.set(tagsCacheKey, tags);
-                    resolve(tags);
-                });
+    async _loadTags(repoObject) {
+        return new Promise((resolve, reject) => {
+            this._gitlabAdapter.projects.repository.listTags(repoObject.getId(), (tags) => {
+                repoObject.setTags(tags);
+                resolve(tags);
             });
-        }
-
-        repoObject.setTags(tags);
+        });
     }
 
     /**
      *
-     * @param {Object} projectInfo
      * @param {Repo} repoObject
      * @private
      */
-    async _loadBranches(projectInfo, repoObject) {
-        debug('app:provider:gitlab')('loading branches', repoObject.getNamespace());
-        const branchesCacheKey = this._formatCacheKey(
-            'branches',
-            projectInfo.path_with_namespace,
-            projectInfo.last_activity_at
-        );
-
-        let branches = this._cache.get(branchesCacheKey, null);
-        if (!branches) {
-            debug('app:provider:gitlab')('cache miss, fetching branches', repoObject.getNamespace());
-            branches = await new Promise((resolve, reject) => {
-                this._gitlabAdapter.projects.repository.listBranches(repoObject.getId(), (branches) => {
-                    this._cache.set(branchesCacheKey, branches);
-                    resolve(branches);
-                });
+    async _loadBranches(repoObject) {
+        return new Promise((resolve, reject) => {
+            this._gitlabAdapter.projects.repository.listBranches(repoObject.getId(), (branches) => {
+                repoObject.setBranches(branches);
+                resolve(branches);
             });
-        }
-
-        repoObject.setBranches(branches);
+        });
     }
 
     /**
@@ -327,7 +268,7 @@ export default class GitlabProvider {
         debug('app:provider:gitlab')('loading refs metadata..', repoObject.getNamespace());
 
         const refs = repoObject.getRefs();
-        for (let refDef of refs) {
+        for (const refDef of refs) {
             if (!repoObject.isRefValid(refDef.name)) {
                 continue;
             }

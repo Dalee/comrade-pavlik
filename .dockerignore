@@ -1,9 +1,21 @@
 .vagrant
 .git
 .idea
+
 coverage
-log
 node_modules
 Vagrantfile
 README.md
 doc
+
+# build/ansible ignores
+build/ansible/roles/configure.vagrant
+build/ansible/vagrant.yml
+build/ansible/scripts
+
+# build/docker ignores
+build/docker/build.sh
+build/docker/test.sh
+build/docker/config.rc
+build/docker/docker-compose.test.yml
+build/docker/shell.sh

@@ -29,15 +29,13 @@ export default class ComposerRegistry {
      *
      * @param {string} userToken
      * @param {Object} providerDef
-     * @param {Cache} providerCache
      */
-    constructor(userToken, providerDef, providerCache) {
+    constructor(userToken, providerDef) {
         this._provider = new GitlabProvider(
             'composer',
             'composer.json',
             userToken,
-            providerDef,
-            providerCache
+            providerDef
         );
     }
 
@@ -47,16 +45,16 @@ export default class ComposerRegistry {
      * @param {string} publicHost
      * @returns {Object}
      */
-    async getPackageList(publicHost) {
+    getPackageList(publicHost) {
         const packages = {};
 
-        const repoList = await this._provider.getRepoList();
-        for (let repo of repoList) {
+        const repoList = this._provider.getRepoList();
+        for (const repo of repoList) {
             const name = repo.getName();
             const refs = repo.getRefs();
 
             const version = {};
-            for (let refInfo of refs) {
+            for (const refInfo of refs) {
                 if (!repo.isRefValid(refInfo.name) || !repo.isRefHasMetadata(refInfo.name)) {
                     continue;
                 }
@@ -98,8 +96,8 @@ export default class ComposerRegistry {
      * @param {string} ref the sha1 hash or branch name to fetch data
      * @returns {Request}
      */
-    async getPackage(uuid, ref) {
-        const result = await this._provider.getArchive(uuid, ref, "zip");
+    getPackage(uuid, ref) {
+        const result = this._provider.getArchive(uuid, ref, "zip");
         return new Readable().wrap(result);
     }
 }

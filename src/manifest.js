@@ -61,11 +61,6 @@ export default {
         },
         {
             plugin: {
-                register: 'hapi-boom-decorators'
-            }
-        },
-        {
-            plugin: {
                 register: 'good',
                 options: {
                     reporters: {
@@ -80,29 +75,6 @@ export default {
                         }, {
                             module: 'good-console'
                         }, 'stdout']
-                    }
-                }
-            }
-        },
-        {
-            plugin: {
-                register: 'inert'
-            }
-        },
-        {
-            plugin: {
-                register: 'vision'
-            }
-        },
-        {
-            plugin: {
-                register: 'hapi-swagger',
-                options: {
-                    host: process.env.NODE_PUBLIC_HOST,
-                    info: {
-                        title: Pack.name,
-                        version: Pack.version,
-                        description: Pack.description
                     }
                 }
             }
